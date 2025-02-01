@@ -19,6 +19,9 @@ import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.epilogue.NotLogged;
+import edu.wpi.first.epilogue.Logged.Importance;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -30,6 +33,7 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -75,12 +79,16 @@ public class SwerveSubsystem extends SubsystemBase {
    */
   private Vision vision;
 
+  // Pose2d startPose;
+  // double initDis;
+
   /**
    * Initialize {@link SwerveDrive} with the directory provided.
    *
    * @param directory Directory of swerve drive config files.
    */
   public SwerveSubsystem(File directory) {
+
     // Configure the Telemetry before creating the SwerveDrive to avoid unnecessary
     // objects being created.
     SwerveDriveTelemetry.verbosity = TelemetryVerbosity.HIGH;
@@ -119,6 +127,7 @@ public class SwerveSubsystem extends SubsystemBase {
       swerveDrive.stopOdometryThread();
     }
     setupPathPlanner();
+    // Epilogue.bind(this);
   }
 
   /**
@@ -133,6 +142,7 @@ public class SwerveSubsystem extends SubsystemBase {
         Constants.MAX_SPEED,
         new Pose2d(new Translation2d(Meter.of(2), Meter.of(0)),
             Rotation2d.fromDegrees(0)));
+    // Epilogue.bind(this);
   }
 
   /**
@@ -375,9 +385,41 @@ public class SwerveSubsystem extends SubsystemBase {
    * @return a Command that drives the swerve drive to a specific distance at a
    *         given speed
    */
+
   public Command driveToDistanceCommand(double distanceInMeters, double speedInMetersPerSecond) {
-    return run(() -> drive(new ChassisSpeeds(speedInMetersPerSecond, 0, 0)))
-        .until(() -> swerveDrive.getPose().getTranslation().getDistance(new Translation2d(0, 0)) > distanceInMeters);
+
+    return new Command() {
+      private Translation2d startTranslation;
+
+      @Override
+      public void initialize() {
+        startTranslation = swerveDrive.getPose().getTranslation();
+      }
+
+      @Override
+      public void execute() {
+        driveFieldOriented(new ChassisSpeeds(speedInMetersPerSecond, 0, 0));
+
+      }
+
+      @Override
+      public boolean isFinished() {
+        return (swerveDrive.getPose().getTranslation().getDistance(startTranslation) > distanceInMeters);
+      }
+    };
+    // return run(() -> {
+    // startPose = swerveDrive.getPose();
+    // initDis =
+    // swerveDrive.getPose().getTranslation().getDistance(startPose.getTranslation());
+
+    // drive(new ChassisSpeeds(speedInMetersPerSecond, 0, 0));
+    // System.out.println("got here! :yay:! " + initDis);
+    // SmartDashboard.putNumber("StartPOse: ", initDis);
+    // }
+
+    // ).until(() ->
+    // swerveDrive.getPose().getTranslation().getDistance(startPose.getTranslation())
+    // > distanceInMeters);
   }
 
   /**
@@ -511,6 +553,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return {@link SwerveDriveKinematics} of the swerve drive.
    */
+  @NotLogged
   public SwerveDriveKinematics getKinematics() {
     return swerveDrive.kinematics;
   }
@@ -534,6 +577,7 @@ public class SwerveSubsystem extends SubsystemBase {
    *
    * @return The robot's pose
    */
+  @NotLogged
   public Pose2d getPose() {
     return swerveDrive.getPose();
   }
