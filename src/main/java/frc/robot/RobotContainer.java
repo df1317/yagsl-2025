@@ -109,13 +109,16 @@ public class RobotContainer {
       drivebase.setDefaultCommand(driveFieldOrientedAnglularVelocity); // Overrides drive command above!
 
       driverXbox.x().whileTrue(Commands.runOnce(drivebase::lock, drivebase).repeatedly());
-      driverXbox.y().whileTrue(drivebase.driveToDistanceCommand(1.0, 0.2));
+      driverXbox.y().onTrue(drivebase.driveToDistanceCommand(1.0, (double) 0.2));
       driverXbox.start().onTrue((Commands.runOnce(drivebase::zeroGyro)));
       driverXbox.back().whileTrue(drivebase.centerModulesCommand());
       driverXbox.leftBumper().onTrue(Commands.none());
       driverXbox.rightBumper().onTrue(Commands.none());
-      driverXbox.a().onTrue(Commands.runOnce(() -> System.out.println("Test Mode: Drive SysID")));
-      driverXbox.a().whileTrue(drivebase.sysIdDriveMotorCommand());
+      // driverXbox.a().onTrue(Commands.runOnce(() -> System.out.println("Test Mode:
+      // Drive SysID")));
+      // driverXbox.a().whileTrue(drivebase.sysIdDriveMotorCommand());
+      driverXbox.a().onTrue(Commands.runOnce(() -> System.out.println("test Mode: Reset Gyro")));
+      driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
 
     } else {
       driverXbox.a().onTrue((Commands.runOnce(drivebase::zeroGyro)));
